@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AuthService } from "./../auth/authService";
+import { AuthService } from "../services/authService";
 
 export class AuthController {
   static async signup(req: Request, res: Response) {
