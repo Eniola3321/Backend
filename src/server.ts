@@ -1,27 +1,35 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import http from "http";
 import "reflect-metadata";
 import config from "./api/config/config";
 import app from "./app";
-import dotenv from "dotenv";
-dotenv.config();
+import { prisma } from "./api/config/prisma";
+
 class Server {
   private server: http.Server;
   private port: number;
+
   constructor() {
     this.port = config.port ?? 3500;
     this.server = http.createServer(app);
   }
+
   private attachSignalHandlers() {
     const shutdown = async () => {
-      console.log("shutting down gracefully...");
+      console.log("Shutting down gracefully...");
+      await prisma.$disconnect();
       this.server.close(() => {
-        console.log("server closed");
+        console.log("Server closed");
         process.exit(0);
       });
     };
+
     process.once("SIGTERM", shutdown);
     process.once("SIGINT", shutdown);
   }
+
   private attachErrorHandlerOnStartup() {
     this.server.once("error", (error: NodeJS.ErrnoException) => {
       if (error.code === "EADDRINUSE" || error.code === "EACCES") {
@@ -38,11 +46,13 @@ class Server {
       }
     });
   }
+
   private listen() {
     this.server.listen(this.port, () => {
       console.log(`${config.NODE_ENV} server running on port ${this.port}`);
     });
   }
+
   public async start(): Promise<void> {
     try {
       this.attachSignalHandlers();
@@ -54,6 +64,14 @@ class Server {
     }
   }
 }
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  process.exit(1);
+});
 
 (async () => {
   const server = new Server();

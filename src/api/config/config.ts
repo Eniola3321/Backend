@@ -1,9 +1,15 @@
-import dotenv from "dotenv";
-dotenv.config();
-export default {
-  NODE_ENV: process.env.NODE_ENV || "development",
-  port: process.env.PORT || 3000,
+export interface AppConfig {
+  NODE_ENV: string;
+  port: number;
+  databaseUrl: string;
+}
+
+const config: AppConfig = {
+  NODE_ENV: process.env.NODE_ENV ?? "development",
+  port: parseInt(process.env.PORT ?? "3000", 10),
   databaseUrl:
-    process.env.DATABASE_URL ||
+    process.env.DATABASE_URL ??
     "postgresql://postgres:3321@localhost:5432/myAIMV?schema=public",
 };
+
+export default config;
