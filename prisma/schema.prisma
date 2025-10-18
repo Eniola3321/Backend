@@ -1,0 +1,147 @@
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id            String            @id @default(uuid())
+  name          String?
+  email         String            @unique
+  passwordHash  String?
+  oauthTokens   OAuthToken[]
+  subscriptions Subscription[]
+  wallets       CryptoWallet[]
+  payments      Payment[]
+  insights      Insight[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  @@map("users")
+}
+
+model OAuthToken {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+  provider     String
+  accessToken  String        // encrypted at rest
+  refreshToken String?
+  expiresAt    DateTime?
+  encrypted    Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+}
+
+
+model Payment {
+  id              String            @id @default(uuid())
+  user            User              @relation(fields: [userId], references: [id])
+  userId          String
+
+  subscription    Subscription       @relation(fields: [subscriptionId], references: [id])
+  subscriptionId  String
+
+  amount          Float
+  currency        String   @default("USD")
+  method          PaymentMethod
+  status          PaymentStatus
+  txHash          String?            // for crypto
+  providerTxId    String?            // for Stripe, PayPal
+  paidAt          DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  PAYPAL
+  STRIPE
+  CRYPTO
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  @@map("payment")
+}
+
+model CryptoWallet {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  address   String
+  chain     String   // ETH, BTC, SOL, etc.
+  network   String   // mainnet, testnet, etc.
+  createdAt DateTime @default(now())
+}
+
+
+model Subscription {
+  id            String               @id @default(uuid())
+  user          User                 @relation(fields: [userId], references: [id])
+  userId        String
+
+  serviceName   String
+  source        String?
+  amount        Float
+  currency      String
+  billingCycle  String               // 'monthly', 'yearly', etc.
+  nextRenewal   DateTime?
+  status        SubscriptionStatus
+  usage         Usage?
+  insights      Insight[]
+  payments      Payment[]
+  lastSyncedAt  DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  TRIAL
+  PAST_DUE
+}
+
+
+model Usage {
+  id              String       @id @default(uuid())
+  subscriptionId  String       @unique
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id])
+  lastEmailDate   DateTime?
+  lastApiUse      DateTime?
+  lastLogin       DateTime?
+  usageScore      Int          @default(0)
+  status          UsageStatus
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+enum UsageStatus {
+  ACTIVE
+  AT_RISK
+  UNUSED
+}
+
+
+model Insight {
+  id               String            @id @default(uuid())
+  user             User              @relation(fields: [userId], references: [id])
+  userId           String
+  subscription     Subscription?     @relation(fields: [subscriptionId], references: [id])
+  subscriptionId   String?
+  type             String            // 'recommendation', 'warning', etc.
+  message          String
+  createdAt        DateTime          @default(now())
+}
