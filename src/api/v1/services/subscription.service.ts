@@ -12,7 +12,6 @@ class SubscriptionService {
       where: { id: subId },
       data: updates,
     });
-    // Also update renewal dates, etc., automatically
   }
 
   async mergeDuplicates(userId: string) {
