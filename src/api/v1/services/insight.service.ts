@@ -5,29 +5,73 @@ import NotificationService from "../services/notification.service";
 const prisma = new PrismaClient();
 
 class InsightsService {
+  /**
+   * Generate insights for a user's subscriptions.
+   * - Recomputes usage scores
+   * - Identifies unused or overlapping tools
+   * - Creates insights and sends notifications
+   */
   async generateInsights(userId: string) {
-    const subs = await prisma.subscription.findMany({ where: { userId } });
+    const subscriptions = await prisma.subscription.findMany({
+      where: { userId },
+      include: { usage: true },
+    });
+
     const insights = [];
-    for (const sub of subs) {
+
+    for (const sub of subscriptions) {
+      // 🧠 1. Recompute usage score
       await ScoringService.computeScore(sub.id);
       const usage = await prisma.usage.findFirst({
         where: { subscriptionId: sub.id },
       });
-      if (usage?.classification === "unused") {
+
+      // ✅ 2. Detect unused subscriptions
+      if (usage?.status === "UNUSED") {
         const insight = await prisma.insight.create({
           data: {
             userId,
             subscriptionId: sub.id,
-            recommendation: "cancel",
-            savings: sub.cost,
+            type: "recommendation",
+            message: `Subscription "${
+              sub.name
+            }" appears unused. Consider canceling to save ${
+              sub.monthlyCost || 0
+            } per month.`,
           },
         });
         insights.push(insight);
       }
-      // Check for overlaps (e.g., multiple AI tools)
     }
-    // Send notifications
-    await NotificationService.sendWeeklySummary(userId, insights);
+
+    // ⚙️ 3. Detect overlapping AI tools (e.g., OpenAI, Anthropic, Gemini)
+    const aiSubs = subscriptions.filter((s) =>
+      s.name.toLowerCase().includes("ai")
+    );
+
+    if (aiSubs.length > 1) {
+      const overlapMessage = `You have ${
+        aiSubs.length
+      } AI-related subscriptions: ${aiSubs
+        .map((s) => s.name)
+        .join(", ")}. Consider consolidating to reduce costs.`;
+
+      const overlapInsight = await prisma.insight.create({
+        data: {
+          userId,
+          type: "warning",
+          message: overlapMessage,
+        },
+      });
+
+      insights.push(overlapInsight);
+    }
+
+    // 📩 4. Send a summary notification
+    if (insights.length > 0) {
+      await NotificationService.sendWeeklySummary(userId, insights);
+    }
+
     return insights;
   }
 }

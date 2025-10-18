@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import { verify } from "jsonwebtoken";
 import config from "../../config/config";
 import { prisma } from "../../config/prisma";
 
@@ -9,8 +9,8 @@ interface JwtPayload {
 
 export interface AuthenticatedRequest extends Request {
   user?: {
-    id: string;
-    email: string;
+    userId: string;
+    email?: string;
     name?: string | null;
   };
 }
@@ -29,7 +29,7 @@ export const authenticate = async (
 
     const token = authHeader.split(" ")[1];
 
-    const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
+    const decoded = verify(token, config.jwtSecret) as JwtPayload;
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -42,7 +42,7 @@ export const authenticate = async (
     }
 
     req.user = {
-      id: user.id,
+      userId: user.id,
       email: user.email,
       name: user.name,
     };

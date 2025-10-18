@@ -1,9 +1,24 @@
 import express from "express";
-import { getInsights } from "../controllers/insights.controller";
-import { authenticate } from "../middlewares/auth.middleware";
+import { authenticate } from "../controllers/auth.middleware";
+import {
+  generateInsights,
+  getUserInsights,
+} from "../controllers/insight.controller";
 
 const router = express.Router();
 
-router.get("/", authenticate, getInsights);
+/**
+ * @route GET /api/insights
+ * @desc Fetch existing insights for the authenticated user
+ * @access Private
+ */
+router.get("/", authenticate, getUserInsights);
+
+/**
+ * @route POST /api/insights/generate
+ * @desc Generate new insights (recomputes usage scores, sends notifications)
+ * @access Private
+ */
+router.post("/generate", authenticate, generateInsights);
 
 export default router;

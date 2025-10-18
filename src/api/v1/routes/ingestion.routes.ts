@@ -1,5 +1,4 @@
 import express from "express";
-import multer from "multer";
 import {
   ingestGmail,
   ingestPlaid,
@@ -7,18 +6,36 @@ import {
   uploadReceipt,
 } from "../controllers/ingestion.controller";
 import { authenticate } from "../controllers/auth.middleware";
+import uploadMiddleware from "../utils/upload.receipt";
 
 const router = express.Router();
-const upload = multer({ dest: "uploads/" });
 
+/**
+ * @route POST /api/ingest/gmail
+ * @desc Ingest Gmail invoices via OAuth
+ * @access Private
+ */
 router.post("/gmail", authenticate, ingestGmail);
+
+/**
+ * @route POST /api/ingest/plaid
+ * @desc Ingest Plaid transaction data
+ * @access Private
+ */
 router.post("/plaid", authenticate, ingestPlaid);
-router.post("/api-usage", authenticate, ingestApiUsage);
-router.post(
-  "/upload-receipt",
-  authenticate,
-  upload.single("receipt"),
-  uploadReceipt
-);
+
+/**
+ * @route POST /api/ingest/api
+ * @desc Ingest usage data from API providers (OpenAI, Anthropic)
+ * @access Private
+ */
+router.post("/api", authenticate, ingestApiUsage);
+
+/**
+ * @route POST /api/ingest/upload
+ * @desc Ingest receipts via manual upload and OCR
+ * @access Private
+ */
+router.post("/upload", authenticate, uploadMiddleware, uploadReceipt);
 
 export default router;
