@@ -10,7 +10,7 @@ const router = Router();
 // Basic Auth
 router.post("/signup", AuthController.signup);
 router.post("/login", AuthController.login);
-router.get("/me", authenticate, AuthController.getProfile);
+router.get("/me", authenticate, AuthController.getMe);
 
 // Provider OAuth
 router.use("/google", gmailRoutes);

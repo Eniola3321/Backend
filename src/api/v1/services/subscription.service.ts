@@ -6,7 +6,15 @@ const prisma = new PrismaClient();
 class SubscriptionService {
   async createSubscription(userId: string, data: Partial<Subscription>) {
     return prisma.subscription.create({
-      data: { ...data, userId },
+      data: {
+        userId,
+        serviceName: data.serviceName || "",
+        amount: data.amount || 0,
+        currency: data.currency || "USD",
+        billingCycle: data.billingCycle || "monthly",
+        status: data.status || "ACTIVE",
+        source: data.source || null,
+      },
     });
   }
 
@@ -29,7 +37,7 @@ class SubscriptionService {
     return prisma.subscription.findMany({
       where: {
         userId,
-        ...(status && { subscriptionStatus: status }),
+        ...(status && { status: status as any }),
       },
       take: limit,
       skip,
@@ -47,7 +55,7 @@ class SubscriptionService {
   async deactivateSubscription(subId: string) {
     return prisma.subscription.update({
       where: { id: subId },
-      data: { subscriptionStatus: "INACTIVE" },
+      data: { status: "CANCELED" },
     });
   }
 
@@ -63,8 +71,8 @@ class SubscriptionService {
     return prisma.subscription.update({
       where: { id: subId },
       data: {
-        monthlyCost: amount,
-        nextBillingDate,
+        amount,
+        nextRenewal: nextBillingDate,
       },
     });
   }
@@ -73,7 +81,7 @@ class SubscriptionService {
     return prisma.subscription.findMany({
       where: {
         userId,
-        subscriptionStatus: "ACTIVE",
+        status: "ACTIVE",
       },
     });
   }
@@ -83,7 +91,7 @@ class SubscriptionService {
     const groups = new Map<string, Subscription[]>();
 
     for (const sub of subs) {
-      const key = sub.name.trim().toLowerCase();
+      const key = sub.serviceName.trim().toLowerCase();
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)?.push(sub);
     }
@@ -94,10 +102,9 @@ class SubscriptionService {
         const duplicates = group.slice(1);
 
         const avgCost =
-          group.reduce((sum, s) => sum + (s.monthlyCost || 0), 0) /
-          group.length;
+          group.reduce((sum, s) => sum + s.amount, 0) / group.length;
         const latestNextBilling = group
-          .map((s) => s.nextBillingDate)
+          .map((s) => s.nextRenewal)
           .filter(Boolean)
           .sort((a, b) => (a! > b! ? -1 : 1))[0];
 
@@ -105,8 +112,8 @@ class SubscriptionService {
           await tx.subscription.update({
             where: { id: primary.id },
             data: {
-              monthlyCost: avgCost,
-              nextBillingDate: latestNextBilling,
+              amount: avgCost,
+              nextRenewal: latestNextBilling,
             },
           });
 

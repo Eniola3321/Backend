@@ -9,9 +9,9 @@ const prisma = new PrismaClient();
 
 // Configure OAuth client
 const oauth2Client = new google.auth.OAuth2(
-  config.google.clientId,
-  config.google.clientSecret,
-  config.google.redirectUri // e.g., https://yourapp.com/api/auth/google/callback
+  config.google.clientId || "",
+  config.google.clientSecret || "",
+  process.env.GOOGLE_REDIRECT_URI || "" // e.g., https://yourapp.com/api/auth/google/callback
 );
 
 export const redirectToGoogle = async (req: Request, res: Response) => {
@@ -37,13 +37,12 @@ export const googleCallback = async (req: Request, res: Response) => {
 
   if (!userId) return res.status(401).json({ error: "User not authenticated" });
 
-  await prisma.user.update({
-    where: { id: userId },
+  await prisma.oAuthToken.create({
     data: {
-      tokens: {
-        ...(req.user as any).tokens,
-        gmail: encrypt(tokens),
-      },
+      userId,
+      provider: "gmail",
+      accessToken: encrypt(tokens.access_token || ""),
+      refreshToken: tokens.refresh_token ? encrypt(tokens.refresh_token) : null,
     },
   });
 

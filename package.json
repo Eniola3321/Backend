@@ -16,6 +16,7 @@
   "dependencies": {
     "@notionhq/client": "^5.2.1",
     "@prisma/client": "^6.17.1",
+    "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "cron": "^4.3.3",
@@ -36,6 +37,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@types/axios": "^0.14.4",
     "@types/bcrypt": "^6.0.0",
     "@types/cron": "^2.4.3",
     "@types/express": "^5.0.3",

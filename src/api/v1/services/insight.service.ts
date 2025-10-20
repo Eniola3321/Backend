@@ -33,11 +33,7 @@ class InsightsService {
             userId,
             subscriptionId: sub.id,
             type: "recommendation",
-            message: `Subscription "${
-              sub.name
-            }" appears unused. Consider canceling to save ${
-              sub.monthlyCost || 0
-            } per month.`,
+            message: `Subscription "${sub.serviceName}" appears unused. Consider canceling to save ${sub.amount} per month.`,
           },
         });
         insights.push(insight);
@@ -46,14 +42,14 @@ class InsightsService {
 
     // ⚙️ 3. Detect overlapping AI tools (e.g., OpenAI, Anthropic, Gemini)
     const aiSubs = subscriptions.filter((s) =>
-      s.name.toLowerCase().includes("ai")
+      s.serviceName.toLowerCase().includes("ai")
     );
 
     if (aiSubs.length > 1) {
       const overlapMessage = `You have ${
         aiSubs.length
       } AI-related subscriptions: ${aiSubs
-        .map((s) => s.name)
+        .map((s) => s.serviceName)
         .join(", ")}. Consider consolidating to reduce costs.`;
 
       const overlapInsight = await prisma.insight.create({

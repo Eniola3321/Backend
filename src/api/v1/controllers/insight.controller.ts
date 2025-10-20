@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { prisma } from "../../config/prisma";
 import InsightsService from "../services/insight.service";
 
 /**

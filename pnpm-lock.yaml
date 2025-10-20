@@ -14,6 +14,9 @@ importers:
       '@prisma/client':
         specifier: ^6.17.1
         version: 6.17.1(prisma@6.17.1(typescript@5.9.3))(typescript@5.9.3)
+      axios:
+        specifier: ^1.12.2
+        version: 1.12.2
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
@@ -69,6 +72,9 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
     devDependencies:
+      '@types/axios':
+        specifier: ^0.14.4
+        version: 0.14.4
       '@types/bcrypt':
         specifier: ^6.0.0
         version: 6.0.0
@@ -473,6 +479,10 @@ packages:
 
   '@tsconfig/node16@1.0.4':
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
+
+  '@types/axios@0.14.4':
+    resolution: {integrity: sha512-9JgOaunvQdsQ/qW2OPmE5+hCeUB52lQSolecrFrthct55QekhmXEwT203s20RL+UHtCQc15y3VXpby9E7Kkh/g==}
+    deprecated: This is a stub types definition. axios provides its own type definitions, so you do not need this installed.
 
   '@types/bcrypt@6.0.0':
     resolution: {integrity: sha512-/oJGukuH3D2+D+3H4JWLaAsJ/ji86dhRidzZ/Od7H/i8g+aCmvkeCc6Ni/f9uxGLSQVCRZkX2/lqEFG2BvWtlQ==}
@@ -2067,6 +2077,12 @@ snapshots:
   '@tsconfig/node14@1.0.3': {}
 
   '@tsconfig/node16@1.0.4': {}
+
+  '@types/axios@0.14.4':
+    dependencies:
+      axios: 1.12.2
+    transitivePeerDependencies:
+      - debug
 
   '@types/bcrypt@6.0.0':
     dependencies:

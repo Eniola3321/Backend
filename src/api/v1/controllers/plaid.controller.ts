@@ -3,16 +3,16 @@ import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import { PrismaClient } from "@prisma/client";
 import config from "../../config/config";
 import IngestionService from "../services/ingestion.service";
-import { encrypt } from "../utils/encryption.utils";
+import { encrypt } from "../utils/encryption.util";
 
 const prisma = new PrismaClient();
 
 const plaidConfig = new Configuration({
-  basePath: PlaidEnvironments.sandbox, // change to production later
+  basePath: PlaidEnvironments[process.env.PLAID_ENV || "sandbox"], // change to production later
   baseOptions: {
     headers: {
-      "PLAID-CLIENT-ID": config.plaid.clientId,
-      "PLAID-SECRET": config.plaid.secret,
+      "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID || "",
+      "PLAID-SECRET": process.env.PLAID_SECRET || "",
     },
   },
 });
@@ -25,9 +25,9 @@ export const createLinkToken = async (req: Request, res: Response) => {
   const response = await plaidClient.linkTokenCreate({
     user: { client_user_id: userId },
     client_name: "AI Subscription Tracker",
-    products: ["transactions"],
+    products: ["transactions" as any],
     language: "en",
-    country_codes: ["US"],
+    country_codes: ["US" as any],
   });
 
   res.json({ link_token: response.data.link_token });
@@ -44,18 +44,18 @@ export const exchangePublicToken = async (req: Request, res: Response) => {
   const response = await plaidClient.itemPublicTokenExchange({ public_token });
   const accessToken = response.data.access_token;
 
-  await prisma.user.update({
-    where: { id: userId },
+  await prisma.oAuthToken.create({
     data: {
-      tokens: {
-        ...(req.user as any).tokens,
-        plaid: encrypt(accessToken),
-      },
+      userId,
+      provider: "plaid",
+      accessToken: encrypt(accessToken),
     },
   });
 
   // Trigger ingestion to detect recurring payments
   await IngestionService.ingestPlaid(userId);
 
-  res.json({ message: "Plaid account linked successfully" });
+  res
+    .status(200)
+    .json({ status: "success", message: "Plaid account linked successfully" });
 };

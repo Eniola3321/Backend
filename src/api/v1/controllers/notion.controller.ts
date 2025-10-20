@@ -3,14 +3,14 @@ import axios from "axios";
 import { PrismaClient } from "@prisma/client";
 import config from "../../config/config";
 import IngestionService from "../services/ingestion.service";
-import { encrypt } from "../utils/encryption.utils";
+import { encrypt } from "../utils/encryption.util";
 
 const prisma = new PrismaClient();
 
 export const redirectToNotion = async (req: Request, res: Response) => {
   const params = new URLSearchParams({
-    client_id: config.notion.clientId,
-    redirect_uri: config.notion.redirectUri,
+    client_id: config.notion.clientId || "",
+    redirect_uri: config.notion.redirectUri || "",
     response_type: "code",
     owner: "user",
   });
@@ -32,30 +32,25 @@ export const notionCallback = async (req: Request, res: Response) => {
     {
       grant_type: "authorization_code",
       code,
-      redirect_uri: config.notion.redirectUri,
+      redirect_uri: config.notion.redirectUri || "",
     },
     {
       auth: {
-        username: config.notion.clientId,
-        password: config.notion.clientSecret,
+        username: config.notion.clientId || "",
+        password: config.notion.clientSecret || "",
       },
     }
   );
 
   const notionToken = tokenResponse.data.access_token;
 
-  await prisma.user.update({
-    where: { id: userId },
+  await prisma.oAuthToken.create({
     data: {
-      tokens: {
-        ...(req.user as any).tokens,
-        notion: encrypt(notionToken),
-      },
+      userId,
+      provider: "notion",
+      accessToken: encrypt(notionToken),
     },
   });
-
-  // Optionally trigger ingestion (if Notion data is used)
-  await IngestionService.ingestApiUsage(userId, "notion");
 
   res.redirect("/dashboard?connected=notion");
 };
