@@ -4,7 +4,7 @@ import config from "../../config/config";
 import { prisma } from "../../config/prisma";
 
 interface JwtPayload {
-  userId: string;
+  id: string;
 }
 
 export interface AuthenticatedRequest extends Request {
@@ -32,7 +32,7 @@ export const authenticate = async (
     const decoded = verify(token, config.jwtSecret) as JwtPayload;
 
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: decoded.id },
     });
 
     if (!user) {
