@@ -1,6 +1,7 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { prisma } from "../../config/prisma";
 import InsightsService from "../services/insight.service";
+import { AuthenticatedRequest } from "./auth.middleware";
 
 /**
  * Generate insights for the authenticated user.
@@ -8,7 +9,10 @@ import InsightsService from "../services/insight.service";
  * - Detects unused and overlapping subscriptions
  * - Sends weekly summary notification
  */
-export const generateInsights = async (req: Request, res: Response) => {
+export const generateInsights = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const userId = req.user?.userId;
     if (!userId) {
@@ -32,7 +36,10 @@ export const generateInsights = async (req: Request, res: Response) => {
  * (Optional) Fetch existing insights for a user
  * Useful if you want a separate route to just *get* insights without recomputing
  */
-export const getUserInsights = async (req: Request, res: Response) => {
+export const getUserInsights = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const userId = req.user?.userId;
     if (!userId) {

@@ -1,7 +1,8 @@
-import { Request, Response } from "express";
+import { Response } from "express";
+import { AuthenticatedRequest } from "./auth.middleware";
 import IngestionService from "../services/ingestion.service";
 
-export const ingestGmail = async (req: Request, res: Response) => {
+export const ingestGmail = async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!.userId;
 
   try {
@@ -13,7 +14,7 @@ export const ingestGmail = async (req: Request, res: Response) => {
   }
 };
 
-export const ingestPlaid = async (req: Request, res: Response) => {
+export const ingestPlaid = async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!.userId;
 
   try {
@@ -25,7 +26,10 @@ export const ingestPlaid = async (req: Request, res: Response) => {
   }
 };
 
-export const ingestApiUsage = async (req: Request, res: Response) => {
+export const ingestApiUsage = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const userId = req.user!.userId;
   const { provider } = req.body; // e.g., "openai" or "anthropic"
 
@@ -46,7 +50,10 @@ export const ingestApiUsage = async (req: Request, res: Response) => {
   }
 };
 
-export const uploadReceipt = async (req: Request, res: Response) => {
+export const uploadReceipt = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const userId = req.user!.userId;
   const file = req.file;
 

@@ -1,24 +1,28 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import { PrismaClient } from "@prisma/client";
 import config from "../../config/config";
 import IngestionService from "../services/ingestion.service";
 import { encrypt } from "../utils/encryption.util";
+import { AuthenticatedRequest } from "./auth.middleware";
 
 const prisma = new PrismaClient();
 
 const plaidConfig = new Configuration({
-  basePath: PlaidEnvironments[process.env.PLAID_ENV || "sandbox"], // change to production later
+  basePath: PlaidEnvironments[config.PLAID_ENV || "sandbox"], // change to production later
   baseOptions: {
     headers: {
-      "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID || "",
-      "PLAID-SECRET": process.env.PLAID_SECRET || "",
+      "PLAID-CLIENT-ID": config.plaid.clientId || "",
+      "PLAID-SECRET": config.plaid.secret || "",
     },
   },
 });
 const plaidClient = new PlaidApi(plaidConfig);
 
-export const createLinkToken = async (req: Request, res: Response) => {
+export const createLinkToken = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const userId = req.user?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -33,7 +37,10 @@ export const createLinkToken = async (req: Request, res: Response) => {
   res.json({ link_token: response.data.link_token });
 };
 
-export const exchangePublicToken = async (req: Request, res: Response) => {
+export const exchangePublicToken = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const { public_token } = req.body;
   const userId = req.user?.userId;
 

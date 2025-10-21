@@ -1,8 +1,12 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import SubscriptionService from "../services/subscription.service";
+import { AuthenticatedRequest } from "./auth.middleware";
 
 // 🧱 Get all subscriptions for a user (with optional filtering)
-export const getSubscriptions = async (req: Request, res: Response) => {
+export const getSubscriptions = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -24,7 +28,10 @@ export const getSubscriptions = async (req: Request, res: Response) => {
 };
 
 // 🧱 Create a new subscription
-export const createSubscription = async (req: Request, res: Response) => {
+export const createSubscription = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -43,7 +50,10 @@ export const createSubscription = async (req: Request, res: Response) => {
 };
 
 // 🧱 Get subscription by ID
-export const getSubscriptionById = async (req: Request, res: Response) => {
+export const getSubscriptionById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { subId } = req.params;
     const subscription = await SubscriptionService.getSubscriptionById(subId);
@@ -60,7 +70,10 @@ export const getSubscriptionById = async (req: Request, res: Response) => {
 };
 
 // 🧱 Update subscription details
-export const updateSubscription = async (req: Request, res: Response) => {
+export const updateSubscription = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { subId } = req.params;
     const updates = req.body;
@@ -81,7 +94,10 @@ export const updateSubscription = async (req: Request, res: Response) => {
 };
 
 // 🧱 Deactivate subscription (set status to INACTIVE)
-export const deactivateSubscription = async (req: Request, res: Response) => {
+export const deactivateSubscription = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { subId } = req.params;
     const updated = await SubscriptionService.deactivateSubscription(subId);
@@ -97,7 +113,10 @@ export const deactivateSubscription = async (req: Request, res: Response) => {
 };
 
 // 🧱 Delete subscription (hard delete)
-export const deleteSubscription = async (req: Request, res: Response) => {
+export const deleteSubscription = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { subId } = req.params;
     await SubscriptionService.deleteSubscription(subId);
@@ -111,7 +130,7 @@ export const deleteSubscription = async (req: Request, res: Response) => {
 
 // 🧱 Merge duplicate subscriptions
 export const mergeDuplicateSubscriptions = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {

@@ -9,8 +9,11 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
     "skipLibCheck": true,
-    "removeComments": true
+    "removeComments": true,
+    "types": ["node", "stripe"]
   },
   "include": ["src/**/*", "src/types/express.d.ts"],
   "exclude": ["node_modules", "dist"]

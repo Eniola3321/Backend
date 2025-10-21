@@ -1,13 +1,17 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import axios from "axios";
 import { PrismaClient } from "@prisma/client";
 import config from "../../config/config";
 import IngestionService from "../services/ingestion.service";
 import { encrypt } from "../utils/encryption.util";
+import { AuthenticatedRequest } from "./auth.middleware";
 
 const prisma = new PrismaClient();
 
-export const redirectToNotion = async (req: Request, res: Response) => {
+export const redirectToNotion = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const params = new URLSearchParams({
     client_id: config.notion.clientId || "",
     redirect_uri: config.notion.redirectUri || "",
@@ -19,7 +23,10 @@ export const redirectToNotion = async (req: Request, res: Response) => {
   );
 };
 
-export const notionCallback = async (req: Request, res: Response) => {
+export const notionCallback = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const { code } = req.query;
   const userId = req.user?.userId;
 

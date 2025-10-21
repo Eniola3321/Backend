@@ -18,7 +18,6 @@ class NotificationService {
       subject: "Weekly Subscription Insights",
       text: `Insights: ${JSON.stringify(insights)}`,
     });
-    // Add push notifications if using Firebase, etc.
   }
 }
 
