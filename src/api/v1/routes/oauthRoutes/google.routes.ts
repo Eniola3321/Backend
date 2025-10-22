@@ -1,4 +1,3 @@
-// routes/oauth/google.routes.ts
 import express from "express";
 import {
   redirectToGoogle,

@@ -1,4 +1,3 @@
-// routes/oauth/notion.routes.ts
 import express from "express";
 import {
   redirectToNotion,
