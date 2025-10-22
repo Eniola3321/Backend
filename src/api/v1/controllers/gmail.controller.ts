@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 const oauth2Client = new google.auth.OAuth2(
   config.google.clientId || "",
   config.google.clientSecret || "",
-  process.env.GOOGLE_REDIRECT_URI || ""
+  config.google.clientRedirectUrl || ""
 );
 
 export const redirectToGoogle = async (

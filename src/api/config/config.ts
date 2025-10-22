@@ -31,6 +31,7 @@ export interface AppConfig {
   google: {
     clientId?: string;
     clientSecret?: string;
+    clientRedirectUrl?: string;
   };
   notion: {
     clientId?: string;
@@ -47,7 +48,7 @@ export interface AppConfig {
 const config: AppConfig = {
   NODE_ENV: process.env.NODE_ENV ?? "development",
   PLAID_ENV: process.env.PLAID_ENV ?? "sandbox",
-  port: parseInt(process.env.PORT ?? "3000", 10),
+  port: parseInt(process.env.PORT ?? "5500", 10),
   databaseUrl: requireEnv("DATABASE_URL"),
   jwtSecret: requireEnv("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "30m",
@@ -76,6 +77,7 @@ const config: AppConfig = {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    clientRedirectUrl: process.env.GOOGLE_REDIRECT_URL,
   },
 
   openaiApiKey: process.env.OPENAI_API_KEY,

@@ -6,6 +6,7 @@ import "reflect-metadata";
 import config from "./api/config/config";
 import app from "./app";
 import { prisma } from "./api/config/prisma";
+import { startJobs } from "./job";
 
 class Server {
   private server: http.Server;
@@ -58,6 +59,7 @@ class Server {
       this.attachSignalHandlers();
       this.attachErrorHandlerOnStartup();
       this.listen();
+      startJobs();
     } catch (error) {
       console.error("Error during server startup:", error);
       process.exit(1);
