@@ -52,7 +52,7 @@ export const googleCallback = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Missing state (JWT token)" });
 
     // Verify JWT from state param
-    const decoded: any = verify(state as string, config.jwt.secret);
+    const decoded: any = verify(state as string, config.jwtSecret);
     const userId = decoded.userId;
     if (!userId)
       return res.status(401).json({ error: "Invalid or expired JWT token" });
