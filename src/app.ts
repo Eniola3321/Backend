@@ -5,6 +5,9 @@ import subscriptionRouter from "./api/v1/routes/subscription.routes";
 import insightRouter from "./api/v1/routes/insight.routes";
 import usageRouter from "./api/v1/routes/usage.routes";
 import paymentRouter from "./api/v1/routes/payment.routes";
+import googleOAuthRouter from "./api/v1/routes/oauthRoutes/google.routes";
+import notionOAuthRouter from "./api/v1/routes/oauthRoutes/notion.routes";
+import plaidOAuthRouter from "./api/v1/routes/oauthRoutes/plaid.routes";
 
 const app: Application = express();
 app.use(express.json());

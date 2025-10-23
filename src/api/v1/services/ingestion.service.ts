@@ -4,7 +4,7 @@ import OpenAI from "openai";
 import { PrismaClient } from "@prisma/client";
 import config from "../../config/config";
 import { recognize } from "../utils/ocr.utils";
-import { decrypt } from "../utils/encryption.util"; // custom decrypt helper
+import { decrypt, encrypt } from "../utils/encryption.util";
 
 const prisma = new PrismaClient();
 
@@ -12,7 +12,7 @@ class IngestionService {
   /**
    * Ingest Gmail invoices via OAuth2
    */
-  async ingestGmail(userId: string) {
+  async ingestGmail(userId: string, oauth2Client?: any) {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -20,23 +20,44 @@ class IngestionService {
       });
       if (!user) throw new Error("User not found");
 
-      const encryptedToken = user.oauthTokens.find(
+      // 🔐 Get tokens
+      const gmailTokenRecord = user.oauthTokens.find(
         (t) => t.provider === "gmail"
-      )?.accessToken;
-      if (!encryptedToken) throw new Error("No Gmail token found");
-
-      const gmailToken = decrypt(encryptedToken);
-
-      const oauth2Client = new google.auth.OAuth2(
-        config.google.clientId,
-        config.google.clientSecret,
-        process.env.GOOGLE_REDIRECT_URI || ""
       );
-      oauth2Client.setCredentials({ access_token: gmailToken });
+      if (!gmailTokenRecord) throw new Error("No Gmail token found");
 
-      const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+      const accessToken = decrypt(gmailTokenRecord.accessToken);
+      const refreshToken = gmailTokenRecord.refreshToken
+        ? decrypt(gmailTokenRecord.refreshToken)
+        : undefined;
 
-      // Fetch Gmail messages related to invoices
+      // ✅ Use passed client or create a new one
+      const client =
+        oauth2Client ||
+        new google.auth.OAuth2(
+          config.google.clientId,
+          config.google.clientSecret,
+          config.google.clientRedirectUrl
+        );
+
+      client.setCredentials({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      // 🔄 Handle automatic refresh and save new access tokens
+      client.on("tokens", async (tokens) => {
+        if (tokens.access_token) {
+          await prisma.oAuthToken.updateMany({
+            where: { userId, provider: "gmail" },
+            data: { accessToken: encrypt(tokens.access_token) },
+          });
+        }
+      });
+
+      const gmail = google.gmail({ version: "v1", auth: client });
+
+      // 📩 Fetch messages
       const res = await gmail.users.messages.list({
         userId: "me",
         q: "invoice OR receipt OR payment confirmation",
@@ -45,7 +66,6 @@ class IngestionService {
 
       const messages = res.data.messages || [];
       for (const msg of messages) {
-        // Retrieve message details
         const full = await gmail.users.messages.get({
           userId: "me",
           id: msg.id!,
@@ -53,11 +73,10 @@ class IngestionService {
 
         const body = full.data.snippet || "";
 
-        // Use regex or NLP to parse fields
+        // 💰 Try to extract amount
         const costMatch = body.match(/\$\s?(\d+(\.\d{1,2})?)/);
         const amount = costMatch ? parseFloat(costMatch[1]) : null;
 
-        // Normalize and save
         if (amount) {
           await prisma.subscription.create({
             data: {
@@ -72,8 +91,10 @@ class IngestionService {
           });
         }
       }
+
+      console.log("✅ Gmail ingestion complete for:", user.email);
     } catch (err: any) {
-      console.error("Gmail ingestion failed:", err.message);
+      console.error("❌ Gmail ingestion failed:", err.message);
     }
   }
 

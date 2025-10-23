@@ -37,6 +37,7 @@ model OAuthToken {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
+  @@unique([userId, provider])
 }
 
 
