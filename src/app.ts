@@ -1,8 +1,7 @@
 import express, { Application, Request, Response } from "express";
-import cors, { CorsOptions } from "cors";
+import cors from "cors";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
-
 import usersRouter from "./api/v1/routes/auth.routes";
 import ingestionRouter from "./api/v1/routes/ingestion.routes";
 import subscriptionRouter from "./api/v1/routes/subscription.routes";
@@ -39,7 +38,7 @@ app.use("/api/v1/payments", paymentRouter);
 app.get("/", (req: Request, res: Response) => {
   res.send("API is running");
 });
-app.all("*", (req, res) => {
+app.use((req, res) => {
   res.status(404).json({ message: `Route ${req.originalUrl} not found` });
 });
 

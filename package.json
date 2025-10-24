@@ -37,7 +37,8 @@
     "passport-jwt": "^4.0.1",
     "plaid": "^39.0.0",
     "reflect-metadata": "^0.2.2",
-    "stripe": "^19.1.0"
+    "stripe": "^19.1.0",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@types/axios": "^0.14.4",
