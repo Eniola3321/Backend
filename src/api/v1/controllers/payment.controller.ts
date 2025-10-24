@@ -12,15 +12,28 @@ export class PaymentController {
    */
   static async createCheckoutSession(req: Request, res: Response) {
     try {
-      const { priceId, userId } = req.body;
+      const { userId } = req.body;
 
-      if (!priceId || !userId) {
+      if (!userId) {
         return res
           .status(400)
-          .json({ message: "Missing required fields: priceId, userId" });
+          .json({ message: "Missing required fields: userId" });
       }
 
-      const url = await paymentService.createCheckoutSession(priceId, userId);
+      const { amount, currency, billingCycle } = req.body;
+
+      if (!userId || !amount) {
+        return res
+          .status(400)
+          .json({ message: "Missing required fields: userId and amount" });
+      }
+
+      const url = await paymentService.createCheckoutSession(
+        userId,
+        amount,
+        currency,
+        billingCycle
+      );
 
       res.status(200).json({ url });
     } catch (err: any) {
