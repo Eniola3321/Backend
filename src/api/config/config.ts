@@ -1,8 +1,5 @@
 import dotenv from "dotenv";
-// import path from "path";
 dotenv.config();
-
-// dotenv.config({ path: path.resolve(__dirname, "../../../.env.examples") });
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -88,7 +85,6 @@ const config: AppConfig = {
 
   stripeSecretKey: requireEnv("STRIPE_SECRET_KEY"),
   stripeWebhookSecret: requireEnv("STRIPE_WEBHOOK_SECRET"),
-
   clientUrl: process.env.CLIENT_URL ?? "http://localhost:3000",
 };
 

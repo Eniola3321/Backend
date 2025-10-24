@@ -8,6 +8,6 @@ import { authenticate } from "../../controllers/auth.middleware";
 const router = express.Router();
 
 router.get("/", authenticate, redirectToNotion);
-router.get("/callback", authenticate, notionCallback);
+router.get("/callback", notionCallback);
 
 export default router;

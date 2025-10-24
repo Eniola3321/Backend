@@ -1,9 +1,10 @@
 import express from "express";
 import bodyParser from "body-parser";
 import { PaymentController } from "../controllers/payment.controller";
+import { authenticate } from "../controllers/auth.middleware";
 
 const router = express.Router();
-
+router.use(authenticate);
 router.post(
   "/webhook",
   bodyParser.raw({ type: "application/json" }),

@@ -9,7 +9,6 @@ import config from "../../config/config";
 
 const prisma = new PrismaClient();
 
-// Initialize Stripe
 const stripe = new Stripe(config.stripeSecretKey as string);
 
 export class PaymentService {
@@ -29,14 +28,8 @@ export class PaymentService {
     return session.url;
   }
 
-  /**
-   * Handle Stripe Webhook events (subscription lifecycle)
-   */
   async handleStripeWebhook(event: Stripe.Event) {
     switch (event.type) {
-      /**
-       * Subscription successfully created after checkout
-       */
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const customerEmail = session.customer_email;
@@ -52,7 +45,6 @@ export class PaymentService {
         const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
         const price = stripeSub.items.data[0]?.price;
 
-        // Map Stripe subscription status to local enum
         const mapStatus = (status: string): SubscriptionStatus => {
           switch (status) {
             case "active":
@@ -68,7 +60,6 @@ export class PaymentService {
           }
         };
 
-        // Save subscription
         const subscription = await prisma.subscription.create({
           data: {
             userId: user.id,
@@ -83,7 +74,6 @@ export class PaymentService {
           },
         });
 
-        // Create initial payment record
         await prisma.payment.create({
           data: {
             userId: user.id,
@@ -100,9 +90,6 @@ export class PaymentService {
         break;
       }
 
-      /**
-       * Recurring payment success
-       */
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
         const stripeSubId = (invoice as any).subscription as string;
@@ -139,9 +126,6 @@ export class PaymentService {
         break;
       }
 
-      /**
-       * Payment failed (card declined, insufficient funds, etc.)
-       */
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         const stripeSubId = (invoice as any).subscription as string;
@@ -171,9 +155,6 @@ export class PaymentService {
         break;
       }
 
-      /**
-       * Subscription canceled
-       */
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
         const stripeSubId = sub.id;
@@ -196,9 +177,6 @@ export class PaymentService {
     }
   }
 
-  /**
-   * Cancel a subscription
-   */
   async cancelSubscription(subscriptionId: string) {
     const subscription = await prisma.subscription.findFirst({
       where: { externalId: subscriptionId },
@@ -215,9 +193,6 @@ export class PaymentService {
     return { message: "Subscription canceled successfully." };
   }
 
-  /**
-   * Get all subscriptions for a specific user
-   */
   async getUserSubscriptions(userId: string) {
     return prisma.subscription.findMany({
       where: { userId },

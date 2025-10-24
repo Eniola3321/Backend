@@ -8,6 +8,6 @@ import { authenticate } from "../../controllers/auth.middleware";
 const router = express.Router();
 
 router.get("/link-token", authenticate, createLinkToken);
-router.post("/exchange-token", authenticate, exchangePublicToken);
+router.post("/exchange-token", exchangePublicToken);
 
 export default router;
