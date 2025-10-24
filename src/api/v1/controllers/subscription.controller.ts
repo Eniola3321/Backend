@@ -27,7 +27,7 @@ export const getSubscriptions = async (
   }
 };
 
-// 🧱 Create a new subscription
+// Create a new subscription
 export const createSubscription = async (
   req: AuthenticatedRequest,
   res: Response
@@ -49,7 +49,7 @@ export const createSubscription = async (
   }
 };
 
-// 🧱 Get subscription by ID
+// Get subscription by ID
 export const getSubscriptionById = async (
   req: AuthenticatedRequest,
   res: Response
@@ -69,7 +69,7 @@ export const getSubscriptionById = async (
   }
 };
 
-// 🧱 Update subscription details
+// Update subscription details
 export const updateSubscription = async (
   req: AuthenticatedRequest,
   res: Response
@@ -93,7 +93,7 @@ export const updateSubscription = async (
   }
 };
 
-// 🧱 Deactivate subscription (set status to INACTIVE)
+// Deactivate subscription (set status to INACTIVE)
 export const deactivateSubscription = async (
   req: AuthenticatedRequest,
   res: Response
@@ -112,7 +112,7 @@ export const deactivateSubscription = async (
   }
 };
 
-// 🧱 Delete subscription (hard delete)
+// Delete subscription (hard delete)
 export const deleteSubscription = async (
   req: AuthenticatedRequest,
   res: Response
@@ -128,7 +128,7 @@ export const deleteSubscription = async (
   }
 };
 
-// 🧱 Merge duplicate subscriptions
+// Merge duplicate subscriptions
 export const mergeDuplicateSubscriptions = async (
   req: AuthenticatedRequest,
   res: Response

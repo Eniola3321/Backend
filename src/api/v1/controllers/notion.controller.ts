@@ -36,7 +36,7 @@ export const notionCallback = async (
   res: Response
 ) => {
   try {
-    const { code, state } = req.query; // ✅ include state
+    const { code, state } = req.query; 
     if (!code)
       return res.status(400).json({ error: "Missing authorization code" });
     if (!state)

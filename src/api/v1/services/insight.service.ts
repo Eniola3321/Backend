@@ -20,13 +20,13 @@ class InsightsService {
     const insights = [];
 
     for (const sub of subscriptions) {
-      // 🧠 1. Recompute usage score
+      //  1. Recompute usage score
       await ScoringService.computeScore(sub.id);
       const usage = await prisma.usage.findFirst({
         where: { subscriptionId: sub.id },
       });
 
-      // ✅ 2. Detect unused subscriptions
+      // 2. Detect unused subscriptions
       if (usage?.status === "UNUSED") {
         const insight = await prisma.insight.create({
           data: {
@@ -40,7 +40,7 @@ class InsightsService {
       }
     }
 
-    // ⚙️ 3. Detect overlapping AI tools (e.g., OpenAI, Anthropic, Gemini)
+    // ⚙️3. Detect overlapping AI tools (e.g., OpenAI, Anthropic, Gemini)
     const aiSubs = subscriptions.filter((s) =>
       s.serviceName.toLowerCase().includes("ai")
     );
@@ -63,7 +63,7 @@ class InsightsService {
       insights.push(overlapInsight);
     }
 
-    // 📩 4. Send a summary notification
+    // 4. Send a summary notification
     if (insights.length > 0) {
       await NotificationService.sendWeeklySummary(userId, insights);
     }

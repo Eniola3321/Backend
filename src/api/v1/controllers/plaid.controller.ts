@@ -9,7 +9,7 @@ import { AuthenticatedRequest } from "./auth.middleware";
 const prisma = new PrismaClient();
 
 const plaidConfig = new Configuration({
-  basePath: PlaidEnvironments[config.PLAID_ENV || "sandbox"], // change to production later
+  basePath: PlaidEnvironments[config.PLAID_ENV || "sandbox"],
   baseOptions: {
     headers: {
       "PLAID-CLIENT-ID": config.plaid.clientId || "",

@@ -11,19 +11,19 @@ import {
 import { authenticate } from "../controllers/auth.middleware";
 
 const router = express.Router();
+router.use(authenticate);
+router.get("/", getSubscriptions);
 
-router.get("/", authenticate, getSubscriptions);
+router.get("/:subId", getSubscriptionById);
 
-router.get("/:subId", authenticate, getSubscriptionById);
+router.post("/", createSubscription);
 
-router.post("/", authenticate, createSubscription);
+router.put("/:subId", updateSubscription);
 
-router.put("/:subId", authenticate, updateSubscription);
+router.patch("/:subId/deactivate", deactivateSubscription);
 
-router.patch("/:subId/deactivate", authenticate, deactivateSubscription);
+router.delete("/:subId", deleteSubscription);
 
-router.delete("/:subId", authenticate, deleteSubscription);
-
-router.post("/merge", authenticate, mergeDuplicateSubscriptions);
+router.post("/merge", mergeDuplicateSubscriptions);
 
 export default router;

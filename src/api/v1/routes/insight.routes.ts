@@ -12,13 +12,14 @@ const router = express.Router();
  * @desc Fetch existing insights for the authenticated user
  * @access Private
  */
-router.get("/", authenticate, getUserInsights);
+router.use(authenticate);
+router.get("/", getUserInsights);
 
 /**
  * @route POST /api/insights/generate
  * @desc Generate new insights (recomputes usage scores, sends notifications)
  * @access Private
  */
-router.post("/generate", authenticate, generateInsights);
+router.post("/generate", generateInsights);
 
 export default router;

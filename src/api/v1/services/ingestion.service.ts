@@ -20,7 +20,7 @@ class IngestionService {
       });
       if (!user) throw new Error("User not found");
 
-      // 🔐 Get tokens
+      //  Get tokens
       const gmailTokenRecord = user.oauthTokens.find(
         (t) => t.provider === "gmail"
       );
@@ -31,7 +31,7 @@ class IngestionService {
         ? decrypt(gmailTokenRecord.refreshToken)
         : undefined;
 
-      // ✅ Use passed client or create a new one
+      // Use passed client or create a new one
       const client =
         oauth2Client ||
         new google.auth.OAuth2(
@@ -45,7 +45,7 @@ class IngestionService {
         refresh_token: refreshToken,
       });
 
-      // 🔄 Handle automatic refresh and save new access tokens
+      //  Handle automatic refresh and save new access tokens
       client.on("tokens", async (tokens) => {
         if (tokens.access_token) {
           await prisma.oAuthToken.updateMany({
@@ -57,7 +57,7 @@ class IngestionService {
 
       const gmail = google.gmail({ version: "v1", auth: client });
 
-      // 📩 Fetch messages
+      //  Fetch messages
       const res = await gmail.users.messages.list({
         userId: "me",
         q: "invoice OR receipt OR payment confirmation",
@@ -73,7 +73,7 @@ class IngestionService {
 
         const body = full.data.snippet || "";
 
-        // 💰 Try to extract amount
+        // Try to extract amount
         const costMatch = body.match(/\$\s?(\d+(\.\d{1,2})?)/);
         const amount = costMatch ? parseFloat(costMatch[1]) : null;
 
@@ -91,10 +91,8 @@ class IngestionService {
           });
         }
       }
-
-      console.log("✅ Gmail ingestion complete for:", user.email);
     } catch (err: any) {
-      console.error("❌ Gmail ingestion failed:", err.message);
+      console.error(" Gmail ingestion failed:", err.message);
     }
   }
 

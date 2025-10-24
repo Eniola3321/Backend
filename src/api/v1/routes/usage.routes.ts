@@ -4,12 +4,12 @@ import {
   getUserUsage,
   upsertUsage,
   deleteUsage,
-} from "../controllers/useage.controller";
+} from "../controllers/usage.controller";
 
 const router = Router();
-
-router.get("/", authenticate, getUserUsage);
-router.post("/", authenticate, upsertUsage);
-router.delete("/:usageId", authenticate, deleteUsage);
+router.use(authenticate);
+router.get("/", getUserUsage);
+router.post("/", upsertUsage);
+router.delete("/:usageId", deleteUsage);
 
 export default router;

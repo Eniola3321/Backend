@@ -15,27 +15,28 @@ const router = express.Router();
  * @desc Ingest Gmail invoices via OAuth
  * @access Private
  */
-router.post("/gmail", authenticate, ingestGmail);
+router.use(authenticate);
+router.post("/gmail", ingestGmail);
 
 /**
  * @route POST /api/ingest/plaid
  * @desc Ingest Plaid transaction data
  * @access Private
  */
-router.post("/plaid", authenticate, ingestPlaid);
+router.post("/plaid", ingestPlaid);
 
 /**
  * @route POST /api/ingest/api
  * @desc Ingest usage data from API providers (OpenAI, Anthropic)
  * @access Private
  */
-router.post("/api", authenticate, ingestApiUsage);
+router.post("/api", ingestApiUsage);
 
 /**
  * @route POST /api/ingest/upload
  * @desc Ingest receipts via manual upload and OCR
  * @access Private
  */
-router.post("/upload", authenticate, uploadMiddleware, uploadReceipt);
+router.post("/upload", uploadMiddleware, uploadReceipt);
 
 export default router;

@@ -7,7 +7,7 @@ export const ingestGmail = async (req: AuthenticatedRequest, res: Response) => {
 
   try {
     await IngestionService.ingestGmail(userId);
-    res.status(200).json({ message: "✅ Gmail data ingested successfully" });
+    res.status(200).json({ message: "Gmail data ingested successfully" });
   } catch (error: any) {
     console.error("Gmail ingestion failed:", error.message);
     res.status(500).json({ error: "Failed to ingest Gmail data" });
@@ -31,7 +31,7 @@ export const ingestApiUsage = async (
   res: Response
 ) => {
   const userId = req.user!.userId;
-  const { provider } = req.body; // e.g., "openai" or "anthropic"
+  const { provider } = req.body; 
 
   try {
     if (!provider || !["openai", "anthropic"].includes(provider)) {
@@ -63,7 +63,7 @@ export const uploadReceipt = async (
     }
 
     await IngestionService.ingestOcr(userId, file.path);
-    res.status(200).json({ message: "✅ Receipt processed successfully" });
+    res.status(200).json({ message: " Receipt processed successfully" });
   } catch (error: any) {
     console.error(" Receipt ingestion failed:", error.message);
     res.status(500).json({ error: "Failed to process receipt" });
