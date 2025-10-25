@@ -9,7 +9,7 @@ import { decrypt, encrypt } from "../utils/encryption.util";
 const prisma = new PrismaClient();
 
 class IngestionService {
-  // 📧 Gmail Ingestion
+  //  Gmail Ingestion
   async ingestGmail(userId: string, oauth2Client?: any) {
     try {
       const user = await prisma.user.findUnique({
@@ -84,7 +84,7 @@ class IngestionService {
     }
   }
 
-  // 💳 Plaid Ingestion
+  //  Plaid Ingestion
   async ingestPlaid(userId: string) {
     try {
       const user = await prisma.user.findUnique({
@@ -139,7 +139,7 @@ class IngestionService {
     }
   }
 
-  // 🤖 API Usage (OpenAI, Anthropic)
+  //  API Usage (OpenAI, Anthropic)
   async ingestApiUsage(userId: string, provider: "openai" | "anthropic") {
     try {
       const user = await prisma.user.findUnique({
@@ -172,7 +172,7 @@ class IngestionService {
     }
   }
 
-  // 🧾 OCR (receipt upload)
+  //  OCR (receipt upload)
   async ingestOcr(userId: string, filePath: string) {
     try {
       const text = await recognize(filePath);
