@@ -9,9 +9,7 @@ import { decrypt, encrypt } from "../utils/encryption.util";
 const prisma = new PrismaClient();
 
 class IngestionService {
-  /**
-   * Ingest Gmail invoices via OAuth2
-   */
+  // 📧 Gmail Ingestion
   async ingestGmail(userId: string, oauth2Client?: any) {
     try {
       const user = await prisma.user.findUnique({
@@ -20,18 +18,14 @@ class IngestionService {
       });
       if (!user) throw new Error("User not found");
 
-      //  Get tokens
-      const gmailTokenRecord = user.oauthTokens.find(
-        (t) => t.provider === "gmail"
-      );
-      if (!gmailTokenRecord) throw new Error("No Gmail token found");
+      const gmailToken = user.oauthTokens.find((t) => t.provider === "gmail");
+      if (!gmailToken) throw new Error("No Gmail token found");
 
-      const accessToken = decrypt(gmailTokenRecord.accessToken);
-      const refreshToken = gmailTokenRecord.refreshToken
-        ? decrypt(gmailTokenRecord.refreshToken)
+      const accessToken = decrypt(gmailToken.accessToken);
+      const refreshToken = gmailToken.refreshToken
+        ? decrypt(gmailToken.refreshToken)
         : undefined;
 
-      // Use passed client or create a new one
       const client =
         oauth2Client ||
         new google.auth.OAuth2(
@@ -45,7 +39,6 @@ class IngestionService {
         refresh_token: refreshToken,
       });
 
-      //  Handle automatic refresh and save new access tokens
       client.on("tokens", async (tokens) => {
         if (tokens.access_token) {
           await prisma.oAuthToken.updateMany({
@@ -56,8 +49,6 @@ class IngestionService {
       });
 
       const gmail = google.gmail({ version: "v1", auth: client });
-
-      //  Fetch messages
       const res = await gmail.users.messages.list({
         userId: "me",
         q: "invoice OR receipt OR payment confirmation",
@@ -70,10 +61,7 @@ class IngestionService {
           userId: "me",
           id: msg.id!,
         });
-
         const body = full.data.snippet || "";
-
-        // Try to extract amount
         const costMatch = body.match(/\$\s?(\d+(\.\d{1,2})?)/);
         const amount = costMatch ? parseFloat(costMatch[1]) : null;
 
@@ -92,13 +80,11 @@ class IngestionService {
         }
       }
     } catch (err: any) {
-      console.error(" Gmail ingestion failed:", err.message);
+      console.error("Gmail ingestion failed:", err.message);
     }
   }
 
-  /**
-   * Ingest transactions from Plaid API
-   */
+  // 💳 Plaid Ingestion
   async ingestPlaid(userId: string) {
     try {
       const user = await prisma.user.findUnique({
@@ -107,12 +93,10 @@ class IngestionService {
       });
       if (!user) throw new Error("User not found");
 
-      const encryptedToken = user.oauthTokens.find(
-        (t) => t.provider === "plaid"
-      )?.accessToken;
-      if (!encryptedToken) throw new Error("No Plaid token found");
+      const plaidToken = user.oauthTokens.find((t) => t.provider === "plaid");
+      if (!plaidToken) throw new Error("No Plaid token found");
 
-      const accessToken = decrypt(encryptedToken);
+      const accessToken = decrypt(plaidToken.accessToken);
 
       const configuration = new Configuration({
         basePath: PlaidEnvironments[process.env.PLAID_ENV || "sandbox"],
@@ -126,7 +110,6 @@ class IngestionService {
 
       const plaidClient = new PlaidApi(configuration);
 
-      // Fetch recent transactions
       const startDate = new Date();
       startDate.setMonth(startDate.getMonth() - 1);
 
@@ -136,8 +119,7 @@ class IngestionService {
         end_date: new Date().toISOString().split("T")[0],
       });
 
-      const transactions = response.data.transactions;
-      for (const txn of transactions) {
+      for (const txn of response.data.transactions) {
         if (txn.name.toLowerCase().includes("ai")) {
           await prisma.subscription.create({
             data: {
@@ -157,9 +139,7 @@ class IngestionService {
     }
   }
 
-  /**
-   * Ingest API usage (e.g., OpenAI or Anthropic)
-   */
+  // 🤖 API Usage (OpenAI, Anthropic)
   async ingestApiUsage(userId: string, provider: "openai" | "anthropic") {
     try {
       const user = await prisma.user.findUnique({
@@ -168,18 +148,14 @@ class IngestionService {
       });
       if (!user) throw new Error("User not found");
 
-      const apiToken = decrypt(
-        user.oauthTokens.find((t) => t.provider === provider)?.accessToken || ""
-      );
-      if (!apiToken) throw new Error(`No token for ${provider}`);
+      const tokenRecord = user.oauthTokens.find((t) => t.provider === provider);
+      if (!tokenRecord) throw new Error(`No token for ${provider}`);
+
+      const apiToken = decrypt(tokenRecord.accessToken);
 
       if (provider === "openai") {
         const openai = new OpenAI({ apiKey: apiToken });
-        // Note: OpenAI API usage tracking might require different endpoint or be unavailable
-        // For now, skip actual API call and use placeholder
-        const usage = { data: [] }; // Placeholder
-
-        // Normalize to your Usage model
+        // Placeholder - you'd hit OpenAI's usage endpoint here if available
         await prisma.usage.upsert({
           where: { subscriptionId: "openai" },
           update: { lastApiUse: new Date(), usageScore: 80 },
@@ -196,9 +172,7 @@ class IngestionService {
     }
   }
 
-  /**
-   * Ingest manually uploaded receipts via OCR
-   */
+  // 🧾 OCR (receipt upload)
   async ingestOcr(userId: string, filePath: string) {
     try {
       const text = await recognize(filePath);
