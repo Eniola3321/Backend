@@ -1,5 +1,3 @@
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,55 +7,104 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id            String            @id @default(uuid())
+  id            String         @id @default(uuid())
   name          String?
-  email         String            @unique
+  email         String         @unique
   passwordHash  String?
-  oauthTokens   OAuthToken[]
-  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   wallets       CryptoWallet[]
-  payments      Payment[]
   insights      Insight[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  oauthTokens   OAuthToken[]
+  payments      Payment[]
+  subscriptions Subscription[]
+
   @@map("users")
 }
 
 model OAuthToken {
-  id           String   @id @default(uuid())
-  user         User     @relation(fields: [userId], references: [id])
+  id           String    @id @default(uuid())
   userId       String
   provider     String
-  accessToken  String        // encrypted at rest
+  accessToken  String
   refreshToken String?
   expiresAt    DateTime?
-  encrypted    Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  @@unique([userId, provider], name: "userId_provider")
+  encrypted    Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id])
 }
 
-
 model Payment {
-  id              String            @id @default(uuid())
-  user            User              @relation(fields: [userId], references: [id])
-  userId          String
+  id             String        @id @default(uuid())
+  userId         String
+  subscriptionId String
+  amount         Float
+  currency       String        @default("USD")
+  method         PaymentMethod
+  status         PaymentStatus
+  txHash         String?
+  providerTxId   String?
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  subscription   Subscription  @relation(fields: [subscriptionId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
+}
 
-  subscription    Subscription       @relation(fields: [subscriptionId], references: [id])
-  subscriptionId  String
+model CryptoWallet {
+  id        String   @id @default(uuid())
+  userId    String
+  address   String
+  chain     String
+  network   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
 
-  amount          Float
-  currency        String   @default("USD")
-  method          PaymentMethod
-  status          PaymentStatus
-  txHash          String?            // for crypto
-  providerTxId    String?            // for Stripe, PayPal
-  paidAt          DateTime?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+model Subscription {
+  id           String             @id @default(uuid())
+  userId       String
+  externalId   String?
+  serviceName  String
+  source       String?
+  amount       Float
+  currency     String
+  billingCycle String
+  nextRenewal  DateTime?
+  status       SubscriptionStatus
+  lastSyncedAt DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  insights     Insight[]
+  payments     Payment[]
+  user         User               @relation(fields: [userId], references: [id])
+  usage        Usage?
+}
+
+model Usage {
+  id             String       @id @default(uuid())
+  subscriptionId String       @unique
+  lastEmailDate  DateTime?
+  lastApiUse     DateTime?
+  lastLogin      DateTime?
+  usageScore     Int          @default(0)
+  status         UsageStatus
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+}
+
+model Insight {
+  id             String        @id @default(uuid())
+  userId         String
+  subscriptionId String?
+  type           String
+  message        String
+  createdAt      DateTime      @default(now())
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
 }
 
 enum PaymentMethod {
@@ -72,40 +119,8 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   REFUNDED
+
   @@map("payment")
-}
-
-model CryptoWallet {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  address   String
-  chain     String   // ETH, BTC, SOL, etc.
-  network   String   // mainnet, testnet, etc.
-  createdAt DateTime @default(now())
-}
-
-
-model Subscription {
-  id            String               @id @default(uuid())
-  user          User                 @relation(fields: [userId], references: [id])
-  userId        String
-  externalId String? // store Stripe subscription ID reference
-
-  serviceName   String
-  source        String?
-  amount        Float
-  currency      String
-  billingCycle  String               // 'monthly', 'yearly', etc.
-  nextRenewal   DateTime?
-  status        SubscriptionStatus
-  usage         Usage?
-  insights      Insight[]
-  payments      Payment[]
-  lastSyncedAt  DateTime?
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-
 }
 
 enum SubscriptionStatus {
@@ -116,34 +131,8 @@ enum SubscriptionStatus {
   PAST_DUE
 }
 
-
-model Usage {
-  id              String       @id @default(uuid())
-  subscriptionId  String       @unique
-  subscription    Subscription @relation(fields: [subscriptionId], references: [id])
-  lastEmailDate   DateTime?
-  lastApiUse      DateTime?
-  lastLogin       DateTime?
-  usageScore      Int          @default(0)
-  status          UsageStatus
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-}
-
 enum UsageStatus {
   ACTIVE
   AT_RISK
   UNUSED
-}
-
-
-model Insight {
-  id               String            @id @default(uuid())
-  user             User              @relation(fields: [userId], references: [id])
-  userId           String
-  subscription     Subscription?     @relation(fields: [subscriptionId], references: [id])
-  subscriptionId   String?
-  type             String            // 'recommendation', 'warning', etc.
-  message          String
-  createdAt        DateTime          @default(now())
 }
