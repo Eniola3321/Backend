@@ -32,7 +32,7 @@ export const redirectToGoogle = async (req: Request, res: Response) => {
         "https://www.googleapis.com/auth/userinfo.profile",
       ],
       prompt: "consent",
-      state: jwtToken, // 🧩 carry user's token securely
+      state: jwtToken,
     });
 
     res.redirect(url);

@@ -30,7 +30,7 @@ router.post("/plaid", ingestPlaid);
  * @desc Ingest usage data from API providers (OpenAI, Anthropic)
  * @access Private
  */
-router.post("/api", ingestApiUsage);
+router.post("/", ingestApiUsage);
 
 /**
  * @route POST /api/ingest/upload
