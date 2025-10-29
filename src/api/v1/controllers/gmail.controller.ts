@@ -4,26 +4,19 @@ import { PrismaClient } from "@prisma/client";
 import config from "../../config/config";
 import IngestionService from "../services/ingestion.service";
 import { encrypt } from "../utils/encryption.util";
-import jwt, { verify } from "jsonwebtoken";
+import { AuthService } from "../services/authService";
 
 const prisma = new PrismaClient();
 
-// Redirect user to Google consent page
+// Redirect user to Google consent page for OAuth login
 export const redirectToGoogle = async (req: Request, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader)
-      return res.status(401).json({ error: "Missing Authorization header" });
-
-    const jwtToken = authHeader.split(" ")[1];
-
     const oauth2Client = new google.auth.OAuth2(
       config.google.clientId,
       config.google.clientSecret,
       config.google.clientRedirectUrl
     );
 
-    // Attach user's JWT as state so we can identify them later
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
       scope: [
@@ -32,7 +25,6 @@ export const redirectToGoogle = async (req: Request, res: Response) => {
         "https://www.googleapis.com/auth/userinfo.profile",
       ],
       prompt: "consent",
-      state: jwtToken,
     });
 
     res.redirect(url);
@@ -42,20 +34,12 @@ export const redirectToGoogle = async (req: Request, res: Response) => {
   }
 };
 
-// Handle Google OAuth callback
+// Handle Google OAuth callback for login
 export const googleCallback = async (req: Request, res: Response) => {
   try {
-    const { code, state } = req.query;
+    const { code } = req.query;
     if (!code)
       return res.status(400).json({ error: "Missing authorization code" });
-    if (!state)
-      return res.status(401).json({ error: "Missing state (JWT token)" });
-
-    // Verify JWT from state param
-    const decoded: any = verify(state as string, config.jwtSecret);
-    const userId = decoded.userId;
-    if (!userId)
-      return res.status(401).json({ error: "Invalid or expired JWT token" });
 
     const oauth2Client = new google.auth.OAuth2(
       config.google.clientId,
@@ -67,11 +51,27 @@ export const googleCallback = async (req: Request, res: Response) => {
     const { tokens } = await oauth2Client.getToken(code as string);
     oauth2Client.setCredentials(tokens);
 
-    // Upsert (create or update) token
+    // Get user profile from Google
+    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
+    const { data: profile } = await oauth2.userinfo.get();
+
+    if (!profile.email) {
+      return res
+        .status(400)
+        .json({ error: "Unable to retrieve email from Google" });
+    }
+
+    // Find or create user and generate JWT
+    const authResult = await AuthService.findOrCreateOAuthUser(
+      profile.email,
+      profile.name
+    );
+
+    // Store OAuth tokens
     await prisma.oAuthToken.upsert({
       where: {
         userId_provider: {
-          userId,
+          userId: authResult.user.id,
           provider: "gmail",
         },
       },
@@ -82,7 +82,7 @@ export const googleCallback = async (req: Request, res: Response) => {
           : undefined,
       },
       create: {
-        userId,
+        userId: authResult.user.id,
         provider: "gmail",
         accessToken: encrypt(tokens.access_token || ""),
         refreshToken: tokens.refresh_token
@@ -92,9 +92,13 @@ export const googleCallback = async (req: Request, res: Response) => {
     });
 
     // Kick off ingestion
-    await IngestionService.ingestGmail(userId, oauth2Client);
+    await IngestionService.ingestGmail(authResult.user.id, oauth2Client);
 
-    res.redirect("/dashboard?connected=gmail");
+    // Return JWT token and user info
+    res.json({
+      status: "success",
+      data: authResult,
+    });
   } catch (err: any) {
     console.error("Google callback error:", err.message);
     res.status(500).json({ error: err.message });

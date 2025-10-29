@@ -79,4 +79,22 @@ export class AuthService {
 
     return user;
   }
+
+  static async findOrCreateOAuthUser(email: string, name?: string) {
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      // Create new user for OAuth login (no password)
+      user = await prisma.user.create({
+        data: { email, name, passwordHash: null },
+      });
+    }
+
+    const token = signToken(user.id);
+
+    return {
+      user: { id: user.id, email: user.email, name: user.name },
+      token,
+    };
+  }
 }
