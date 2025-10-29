@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
+// import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import OpenAI from "openai";
 import { PrismaClient } from "@prisma/client";
 import config from "../../config/config";
@@ -60,7 +60,7 @@ class IngestionService {
       //  Fetch messages
       const res = await gmail.users.messages.list({
         userId: "me",
-        q: "invoice OR receipt OR payment confirmation",
+        q: "subscription OR billing OR invoice OR receipt OR payment confirmation",
         maxResults: 10,
       });
 
@@ -69,22 +69,85 @@ class IngestionService {
         const full = await gmail.users.messages.get({
           userId: "me",
           id: msg.id!,
+          format: "full",
         });
+
+        // Extract sender from headers
+        const headers = full.data.payload?.headers || [];
+        const fromHeader =
+          headers.find((h: any) => h.name === "From")?.value || "";
+        const senderEmail = fromHeader.match(/<([^>]+)>/)?.[1] || fromHeader;
+
+        // Filter by sender patterns
+        const senderPatterns = ["billing@", "noreply@", "receipts@"];
+        const isRelevantSender = senderPatterns.some((pattern) =>
+          senderEmail.toLowerCase().includes(pattern)
+        );
+
+        // Check for AI service domains
+        const aiDomains = [
+          "openai.com",
+          "anthropic.com",
+          "google.com",
+          "microsoft.com",
+          "aws.amazon.com",
+        ];
+        const isAiService = aiDomains.some((domain) =>
+          senderEmail.toLowerCase().includes(domain)
+        );
+
+        if (!isRelevantSender && !isAiService) continue;
 
         const body = full.data.snippet || "";
 
-        // Try to extract amount
-        const costMatch = body.match(/\$\s?(\d+(\.\d{1,2})?)/);
-        const amount = costMatch ? parseFloat(costMatch[1]) : null;
+        // Enhanced extraction using regex patterns
+        const extractInfo = (text: string) => {
+          const serviceNameMatch = text.match(
+            /(?:from|service|subscription)\s*:?\s*([A-Za-z\s]+?)(?:\s*\||\s*-|\s*\n|$)/i
+          );
+          const tierMatch = text.match(
+            /(?:plan|tier|subscription)\s*:?\s*([A-Za-z0-9\s]+?)(?:\s*\||\s*-|\s*\n|$)/i
+          );
+          const amountMatch = text.match(/\$\s?(\d+(?:\.\d{1,2})?)/);
+          const frequencyMatch = text.match(
+            /(monthly|annual|yearly|weekly|daily)/i
+          );
+          const renewalMatch = text.match(
+            /(?:renewal|next billing|expires?)\s*:?\s*(\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2})/i
+          );
+          const paymentMethodMatch = text.match(
+            /(?:ending in|card.*\*\*\*\*|last 4)\s*(\d{4})/i
+          );
 
-        if (amount) {
+          return {
+            serviceName: serviceNameMatch
+              ? serviceNameMatch[1].trim()
+              : senderEmail.split("@")[0],
+            tier: tierMatch ? tierMatch[1].trim() : null,
+            amount: amountMatch ? parseFloat(amountMatch[1]) : null,
+            billingCycle: frequencyMatch
+              ? frequencyMatch[1].toLowerCase()
+              : "monthly",
+            renewalDate: renewalMatch ? new Date(renewalMatch[1]) : null,
+            paymentMethod: paymentMethodMatch
+              ? `****${paymentMethodMatch[1]}`
+              : null,
+          };
+        };
+
+        const extracted = extractInfo(body);
+
+        if (extracted.amount) {
           await prisma.subscription.create({
             data: {
               userId,
-              serviceName: "Detected Gmail Subscription",
-              amount,
+              serviceName: extracted.serviceName,
+              tier: extracted.tier,
+              amount: extracted.amount,
               currency: "USD",
-              billingCycle: "monthly",
+              billingCycle: extracted.billingCycle,
+              nextRenewal: extracted.renewalDate,
+              paymentMethod: extracted.paymentMethod,
               source: "gmail",
               status: "ACTIVE",
             },
@@ -99,63 +162,63 @@ class IngestionService {
   /**
    * Ingest transactions from Plaid API
    */
-  async ingestPlaid(userId: string) {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { oauthTokens: true },
-      });
-      if (!user) throw new Error("User not found");
+  // async ingestPlaid(userId: string) {
+  //   try {
+  //     const user = await prisma.user.findUnique({
+  //       where: { id: userId },
+  //       include: { oauthTokens: true },
+  //     });
+  //     if (!user) throw new Error("User not found");
 
-      const encryptedToken = user.oauthTokens.find(
-        (t) => t.provider === "plaid"
-      )?.accessToken;
-      if (!encryptedToken) throw new Error("No Plaid token found");
+  //     const encryptedToken = user.oauthTokens.find(
+  //       (t) => t.provider === "plaid"
+  //     )?.accessToken;
+  //     if (!encryptedToken) throw new Error("No Plaid token found");
 
-      const accessToken = decrypt(encryptedToken);
+  //     const accessToken = decrypt(encryptedToken);
 
-      const configuration = new Configuration({
-        basePath: PlaidEnvironments[process.env.PLAID_ENV || "sandbox"],
-        baseOptions: {
-          headers: {
-            "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID || "",
-            "PLAID-SECRET": process.env.PLAID_SECRET || "",
-          },
-        },
-      });
+  //     const configuration = new Configuration({
+  //       basePath: PlaidEnvironments[process.env.PLAID_ENV || "sandbox"],
+  //       baseOptions: {
+  //         headers: {
+  //           "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID || "",
+  //           "PLAID-SECRET": process.env.PLAID_SECRET || "",
+  //         },
+  //       },
+  //     });
 
-      const plaidClient = new PlaidApi(configuration);
+  //     const plaidClient = new PlaidApi(configuration);
 
-      // Fetch recent transactions
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 1);
+  //     // Fetch recent transactions
+  //     const startDate = new Date();
+  //     startDate.setMonth(startDate.getMonth() - 1);
 
-      const response = await plaidClient.transactionsGet({
-        access_token: accessToken,
-        start_date: startDate.toISOString().split("T")[0],
-        end_date: new Date().toISOString().split("T")[0],
-      });
+  //     const response = await plaidClient.transactionsGet({
+  //       access_token: accessToken,
+  //       start_date: startDate.toISOString().split("T")[0],
+  //       end_date: new Date().toISOString().split("T")[0],
+  //     });
 
-      const transactions = response.data.transactions;
-      for (const txn of transactions) {
-        if (txn.name.toLowerCase().includes("ai")) {
-          await prisma.subscription.create({
-            data: {
-              userId,
-              serviceName: txn.name,
-              amount: txn.amount,
-              currency: "USD",
-              billingCycle: "monthly",
-              source: "plaid",
-              status: "ACTIVE",
-            },
-          });
-        }
-      }
-    } catch (err: any) {
-      console.error("Plaid ingestion failed:", err.message);
-    }
-  }
+  //     const transactions = response.data.transactions;
+  //     for (const txn of transactions) {
+  //       if (txn.name.toLowerCase().includes("ai")) {
+  //         await prisma.subscription.create({
+  //           data: {
+  //             userId,
+  //             serviceName: txn.name,
+  //             amount: txn.amount,
+  //             currency: "USD",
+  //             billingCycle: "monthly",
+  //             source: "plaid",
+  //             status: "ACTIVE",
+  //           },
+  //         });
+  //       }
+  //     }
+  //   } catch (err: any) {
+  //     console.error("Plaid ingestion failed:", err.message);
+  //   }
+  // }
 
   /**
    * Ingest API usage (e.g., OpenAI or Anthropic)

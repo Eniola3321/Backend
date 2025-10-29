@@ -1,7 +1,7 @@
 import express from "express";
 import {
   ingestGmail,
-  ingestPlaid,
+  // ingestPlaid,
   ingestApiUsage,
   uploadReceipt,
 } from "../controllers/ingestion.controller";
@@ -23,7 +23,7 @@ router.post("/gmail", ingestGmail);
  * @desc Ingest Plaid transaction data
  * @access Private
  */
-router.post("/plaid", ingestPlaid);
+// router.post("/plaid", ingestPlaid);
 
 /**
  * @route POST /api/ingest/api

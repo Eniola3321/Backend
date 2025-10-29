@@ -35,7 +35,6 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
-    "plaid": "^39.0.0",
     "reflect-metadata": "^0.2.2",
     "stripe": "^19.1.0",
     "tesseract.js": "^6.0.1"

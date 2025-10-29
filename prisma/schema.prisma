@@ -93,11 +93,13 @@ model Subscription {
   externalId String? // store Stripe subscription ID reference
 
   serviceName   String
+  tier          String?
   source        String?
   amount        Float
   currency      String
   billingCycle  String               // 'monthly', 'yearly', etc.
   nextRenewal   DateTime?
+  paymentMethod String?
   status        SubscriptionStatus
   usage         Usage?
   insights      Insight[]

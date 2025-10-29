@@ -71,9 +71,6 @@ importers:
       passport-jwt:
         specifier: ^4.0.1
         version: 4.0.1
-      plaid:
-        specifier: ^39.0.0
-        version: 39.0.0
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -1310,10 +1307,6 @@ packages:
 
   pkg-types@2.3.0:
     resolution: {integrity: sha512-SIqCzDRg0s9npO5XQ3tNZioRY1uK06lA41ynBC1YmFTmnY6FjUjVt6s4LoADmwoig1qqD0oK8h1p/8mlMx8Oig==}
-
-  plaid@39.0.0:
-    resolution: {integrity: sha512-7WuI97/R/xzjQV8ZSWY/rx5mFjjLDbIuGpFrOq0AolqplwT9StHe0ADa+H5rrpeOi6NNr+DdN7Ace/TACYME1w==}
-    engines: {node: '>=10.0.0'}
 
   prisma@6.17.1:
     resolution: {integrity: sha512-ac6h0sM1Tg3zu8NInY+qhP/S9KhENVaw9n1BrGKQVFu05JT5yT5Qqqmb8tMRIE3ZXvVj4xcRA5yfrsy4X7Yy5g==}
@@ -3147,12 +3140,6 @@ snapshots:
       confbox: 0.2.2
       exsolve: 1.0.7
       pathe: 2.0.3
-
-  plaid@39.0.0:
-    dependencies:
-      axios: 1.12.2
-    transitivePeerDependencies:
-      - debug
 
   prisma@6.17.1(typescript@5.9.3):
     dependencies:

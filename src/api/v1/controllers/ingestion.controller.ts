@@ -14,24 +14,24 @@ export const ingestGmail = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export const ingestPlaid = async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user!.userId;
+// export const ingestPlaid = async (req: AuthenticatedRequest, res: Response) => {
+//   const userId = req.user!.userId;
 
-  try {
-    await IngestionService.ingestPlaid(userId);
-    res.status(200).json({ message: " Plaid data ingested successfully" });
-  } catch (error: any) {
-    console.error(" Plaid ingestion failed:", error.message);
-    res.status(500).json({ error: "Failed to ingest Plaid data" });
-  }
-};
+//   try {
+//     await IngestionService.ingestPlaid(userId);
+//     res.status(200).json({ message: " Plaid data ingested successfully" });
+//   } catch (error: any) {
+//     console.error(" Plaid ingestion failed:", error.message);
+//     res.status(500).json({ error: "Failed to ingest Plaid data" });
+//   }
+// };
 
 export const ingestApiUsage = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
   const userId = req.user!.userId;
-  const { provider } = req.body; 
+  const { provider } = req.body;
 
   try {
     if (!provider || !["openai", "anthropic"].includes(provider)) {

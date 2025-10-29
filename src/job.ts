@@ -9,7 +9,7 @@ const dailySync = new CronJob("0 0 * * *", async () => {
   const users = await prisma.user.findMany();
   for (const user of users) {
     await IngestionService.ingestGmail(user.id);
-    await IngestionService.ingestPlaid(user.id);
+    // await IngestionService.ingestPlaid(user.id);
   }
 });
 
